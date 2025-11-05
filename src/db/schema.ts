@@ -8,6 +8,7 @@ import {
   timestamp,
   bigint,
 } from "drizzle-orm/pg-core";
+import { InferSelectModel } from "drizzle-orm";
 
 const advocates = pgTable("advocates", {
   id: serial("id").primaryKey(),
@@ -22,3 +23,4 @@ const advocates = pgTable("advocates", {
 });
 
 export { advocates };
+export type Advocate = InferSelectModel<typeof advocates>;
