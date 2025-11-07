@@ -1,91 +1,64 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdvocateTable } from "./components/AdvocateTable";
+import { Loading } from "./components/Loading";
+import type { Advocate } from "../db/schema";
+import { Search } from "./components/Search";
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState([]);
+  const [advocates, setAdvocates] = useState<Advocate[]>([]);
+  const [isLoading, setLoading] = useState(true);
+  const [search, setSearch] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
+    setLoading(true);
+
+    const queryParams = new URLSearchParams({
+      search: search,
+      page: page.toString(),
+    });
+
+    fetch(`/api/advocates?${queryParams.toString()}`)
+      .then((response) => response.json())
+      .then((json: { data: Advocate[]; hasMore: boolean }) => {
+        setAdvocates(json.data);
+        setLoading(false);
+        setHasMore(json.hasMore);
       });
-    });
-  }, []);
-
-  const onChange = (e) => {
-    const searchTerm = e.target.value;
-
-    document.getElementById("search-term").innerHTML = searchTerm;
-
-    console.log("filtering advocates...");
-    const filteredAdvocates = advocates.filter((advocate) => {
-      return (
-        advocate.firstName.includes(searchTerm) ||
-        advocate.lastName.includes(searchTerm) ||
-        advocate.city.includes(searchTerm) ||
-        advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.includes(searchTerm)
-      );
-    });
-
-    setFilteredAdvocates(filteredAdvocates);
-  };
-
-  const onClick = () => {
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
-  };
+  }, [page, search]);
 
   return (
-    <main style={{ margin: "24px" }}>
-      <h1>Solace Advocates</h1>
-      <br />
-      <br />
-      <div>
-        <p>Search</p>
-        <p>
-          Searching for: <span id="search-term"></span>
-        </p>
-        <input style={{ border: "1px solid black" }} onChange={onChange} />
-        <button onClick={onClick}>Reset Search</button>
-      </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <th>First Name</th>
-          <th>Last Name</th>
-          <th>City</th>
-          <th>Degree</th>
-          <th>Specialties</th>
-          <th>Years of Experience</th>
-          <th>Phone Number</th>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate) => {
-            return (
-              <tr>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map((s) => (
-                    <div>{s}</div>
-                  ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <main className="px-5 py-12 bg-gray-200">
+      <h1 className="text-3xl font-bold">Solace Advocates</h1>
+      <Search
+        onSubmit={(term) => {
+          setSearch(term);
+          setPage(1);
+        }}
+        onReset={() => {
+          setSearch("");
+          setPage(1);
+        }}
+      />
+      {isLoading ? (
+        <Loading />
+      ) : (
+        <>
+          <AdvocateTable advocates={advocates} />
+          {hasMore && (
+            <button
+              disabled={isLoading}
+              className="bg-[#1d4339] text-white text-sm p-2 pointer"
+              onClick={() => setPage((page) => page + 1)}
+            >
+              Next Page
+            </button>
+          )}
+        </>
+      )}
     </main>
   );
 }

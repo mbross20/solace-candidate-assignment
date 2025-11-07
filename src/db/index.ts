@@ -7,6 +7,12 @@ const setup = () => {
     return {
       select: () => ({
         from: () => [],
+        where: () => [],
+      }),
+      insert: () => ({
+        values: () => ({
+          returning: async () => [],
+        }),
       }),
     };
   }
